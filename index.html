@@ -20,7 +20,15 @@
       height: 100vh;
       overflow: hidden;
     }
-
+    .math-scrollable {
+      overflow-x: auto;   /* Add horizontal scrollbar if content overflows */
+      overflow-y: hidden; /* Optional: hide vertical scrollbar if not needed,
+                            though MathJax usually doesn't overflow vertically much */
+      max-width: 100%;    /* Ensure the div itself doesn't overflow its parent */
+      padding-bottom: 10px; /* Optional: Add some space for the scrollbar so it
+                              doesn't overlap content too much, or to give visual breathing room */
+      -webkit-overflow-scrolling: touch; /* For smoother scrolling on iOS devices */
+    }
     nav {
       width: 250px;
       background-color: #2c3e50;
@@ -54,16 +62,37 @@
 
     main {
       flex: 1;
-      padding: 2rem;
+      padding: 2rem 4rem 2rem 2rem;
       overflow-y: auto;
+      max-width: 900px;
     }
 
     .doc-section {
       display: none;
     }
+    
+    .doc-section h2{
 
+      border-bottom: 2px solid #ccc;  /* change color and thickness as needed */
+      padding-bottom: 0.3rem;
+      margin-bottom: 1rem;
+
+    }
     .doc-section.active {
       display: block;
+    }
+
+    .theorem-box {
+      border: 1px solid #888;
+      border-left: 5px solid #2c3e50;
+      background: #f9f9f9;
+      padding: 1em;
+      margin: 1em 0;
+      font-family: serif;
+    }
+    .theorem-title {
+      font-weight: bold;
+      margin-bottom: 0.5em;
     }
   </style>
 </head>
@@ -77,10 +106,12 @@
       <span class="function-link" data-fn="functions">Functions Overview</span>
       <span class="function-link sub-link" data-fn="add">add</span>
       <span class="function-link sub-link" data-fn="cross_entropy_loss">cross_entropy_loss</span>
+      <span class="function-link sub-link" data-fn="matmul">matmul</span>
       <span class="function-link sub-link" data-fn="relu">relu</span>
       <span class="function-link sub-link" data-fn="select">select</span>
       <span class="function-link sub-link" data-fn="sigmoid">sigmoid</span>
       <span class="function-link sub-link" data-fn="softmax">softmax</span>
+      <span class="function-link sub-link" data-fn="sum">sum</span>
       <span class="function-link sub-link" data-fn="tanh">tanh</span>
 
       <h2>Modules</h2>
@@ -98,91 +129,58 @@
   </nav>
 
   <main>
-    <div id="home" class="doc-section active">
-      <h1>My Library Documentation</h1>
-      <p>Welcome to the documentation for <strong>DLminibox</strong>This library provides functions, modules and optimizers built on top of an automatic differentiation system allowing you to build powerful deep learning AI models. Please have a look at the <a href="https://michaelkosmider.github.io/dlminiboxtutorial/">tutorial</a> to understand the theoretical foundation of this system, which uses backpropagation at its core.</p>
-    </div>
-
-    <div id="functions" class="doc-section">
-      <h2>Functions</h2>
-      <p>Core mathematical and transformation operations provided by the library.</p>
-    </div>
-
-    <div id="add" class="doc-section">
-      <h2><code>func_name(param1, param2)</code></h2>
-      <p><strong>Description:</strong> A concise summary of what the function does.</p>
-
-      <h3>Parameters</h3>
-      <ul>
-        <li><code>param1</code> (<em>int</em>): Description of the first parameter.</li>
-        <li><code>param2</code> (<em>str</em>): Description of the second parameter.</li>
-      </ul>
-
-      <h3>Returns</h3>
-      <p><code>bool</code>: True if successful, otherwise False.</p>
-
-      <h3>Example</h3>
-      <pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">class Variable(np.ndarray):
-    def __new__(cls, input_array, keep_grad=False):
-        # Input array is an already formed ndarray instance
-        # We first cast to be our class type
-        obj = np.asarray(input_array).view(cls)
-
-        # Add the Node attribute to the created instance
-        obj.node = Node(keep_grad=keep_grad)
-
-        # Finally, we must return the newly created object:
-        return obj
-
-    def __array_finalize__(self, obj):
-        if obj is None:
-            return
-    
-# Creating a Variable
-X = Variable(np.array([1,2,3,4,5]))</code></pre>
-    </div>
-
-    <div id="cross_entropy_loss" class="doc-section"><h3>cross_entropy_loss</h3><p>...</p></div>
-    <div id="relu" class="doc-section"><h3>relu</h3><p>...</p></div>
-    <div id="select" class="doc-section"><h3>select</h3><p>...</p></div>
-    <div id="sigmoid" class="doc-section"><h3>sigmoid</h3><p>...</p></div>
-    <div id="softmax" class="doc-section"><h3>softmax</h3><p>...</p></div>
-    <div id="tanh" class="doc-section"><h3>tanh</h3><p>...</p></div>
-
-    <div id="modules" class="doc-section">
-      <h2>Modules</h2>
-      <p>Modular components used for building models.</p>
-    </div>
-    <div id="linear" class="doc-section"><h3>Linear</h3><p>...</p></div>
-    <div id="conv" class="doc-section"><h3>Conv</h3><p>...</p></div>
-
-    <div id="optimizers" class="doc-section">
-      <h2>Optimizers</h2>
-      <p>Optimization algorithms for training models.</p>
-    </div>
-    <div id="sgd" class="doc-section"><h3>SGD</h3><p>...</p></div>
-    <div id="adam" class="doc-section"><h3>Adam</h3><p>...</p></div>
-    <div id="adagrad" class="doc-section"><h3>Adagrad</h3><p>...</p></div>
-    <div id="rmsprop" class="doc-section"><h3>RMSProp</h3><p>...</p></div>
+    <div id="doc-content" class="doc-section active"></div>
   </main>
 
   <script>
     const links = document.querySelectorAll('.function-link');
-    const sections = document.querySelectorAll('.doc-section');
+    const contentDiv = document.getElementById('doc-content');
+
+    async function loadSection(targetId) {
+      try {
+        const res = await fetch(`sections/${targetId}.html`);
+        if (!res.ok) throw new Error("File not found.");
+        const html = await res.text();
+        contentDiv.innerHTML = html;
+
+        // Trigger MathJax re-typesetting
+        if (window.MathJax && window.MathJax.typesetPromise) {
+          await MathJax.typesetPromise([contentDiv]);
+        }
+        // Re-highlight code blocks
+        if (window.Prism) {
+          Prism.highlightAll();
+        }
+      } catch (err) {
+        contentDiv.innerHTML = `<p style="color:red;">Failed to load content for <strong>${targetId}</strong>.</p>`;
+      }
+    }
 
     links.forEach(link => {
       link.addEventListener('click', () => {
         const targetId = link.getAttribute('data-fn');
-
-        sections.forEach(section => {
-          section.classList.remove('active');
-        });
-
-        const targetSection = document.getElementById(targetId);
-        if (targetSection) {
-          targetSection.classList.add('active');
-        }
+        loadSection(targetId);
       });
+    });
+
+    // Initial load for homepage
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSection('home');
+    });
+
+  </script>
+
+  <script>
+    // Load the homepage content on initial page load
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('sections/home.html');
+        if (!res.ok) throw new Error("File not found.");
+        const html = await res.text();
+        document.getElementById('doc-content').innerHTML = html;
+      } catch (err) {
+        document.getElementById('doc-content').innerHTML = `<p style="color:red;">Failed to load default homepage content.</p>`;
+      }
     });
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>

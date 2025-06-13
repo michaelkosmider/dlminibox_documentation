@@ -1,0 +1,63 @@
+<h2><code>relu(X)</code></h2>
+<p><strong>Description:</strong> Applies the rectified linear unit function element-wise to the input tensor, returning a new tensor of the same shape. In other words, outputs a tensor resulting from replacing every negative entry in the input tensor with \(0\).</p>
+
+<h3>Parameters</h3>
+<ul>
+<li><code>X</code> (<em>Variable</em>): The input tensor, which can be of any shape.</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>Y</code> (<em>Variable</em>): A new tensor resulting from applying relu to the input tensor.</p>
+
+<h3>Theory</h3>
+<p>
+    Suppose \(i\) is a (possibly multi-dimensional) index into \(X\). Then \(Y_i\) = max\((0,X_i)\). Therefore, 
+</p>
+
+<p>
+    \[
+        \frac{\partial Y_i}{\partial X_i} = \begin{cases}
+        1 & \text{if } X_i > 0 \text{ (equivalently, }Y_i > 0 \text{)}\\
+        0  & \text{otherwise.}
+        \end{cases}
+    \]
+</p>
+
+
+<p>
+    Despite being mathematically incorrect, we choose the derivative at \(0\) to be \(0\) in order to have uninterrupted gradient computation.
+</p>
+
+<p>
+    Since relu is applied element-wise, then \(Y_i\) is the only child of \(X_i\) in \(Y\). Therefore, \( (G_{XY})_i = \frac{dz}{dY_i} \cdot \frac{\partial Y_i}{\partial X_i}\).
+</p>
+
+<p>
+    Therefore the input gradient is equal to the upstream gradient zeroed out anywhere the output was 0 or less. Hence, \((G_{XY})\) (also denoted dX) is given by \(\frac{dz}{dY} \odot (Y > 0)\), where \(\odot\) is a Hadamard product.
+</p>
+
+<h3>Code</h3>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def relu(X):
+
+    # Compute output of module.
+    output = np.maximum(0, X)
+
+    # Create and connect node in computation graph.
+    output.node = Node()
+
+    input_nodes = []
+    backward_fn_params = {}
+
+    if X.node.propagate_grad or X.node.keep_grad:
+        input_nodes.append(X.node)
+        backward_fn_params["output"] = output
+
+    output.node.connect(input_nodes, relu_backward, backward_fn_params)
+
+    return output
+
+
+def relu_backward(params, upstream):
+    dX = [upstream * (1 * (params["output"] > 0))]
+    return dX</code></pre>

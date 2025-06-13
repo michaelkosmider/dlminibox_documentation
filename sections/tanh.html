@@ -1,0 +1,76 @@
+<h2><code>sigmoid(X)</code></h2>
+<p><strong>Description:</strong> Applies the tanh function element-wise to the input tensor, returning a new tensor of the same shape.</p>
+
+<h3>Parameters</h3>
+<ul>
+<li><code>X</code> (<em>Variable</em>): The input tensor, which can be of any shape.</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>Y</code> (<em>Variable</em>): A new tensor resulting from applying tanh to the input tensor.</p>
+
+<h3>Theory</h3>
+<p>
+    Suppose \(i\) is a (possibly multi-dimensional) index into \(X\). Then \(Y_i\) = \(\text{tanh}(X_i) = \frac{e^{X_i} - e^{-X_i}}{e^{X_i} + e^{-X_i}} \). The computation for the derivative is quite long, but not difficult. We omit it here (try it as an exercise) and show the result:
+</p>
+
+<p>
+    \[
+        \begin{align*}
+            \frac{dY_i}{d{X_i}}
+            &= \left( 1 - \text{tanh}^2({X_i}) \right)
+        \end{align*}
+    \]  
+</p>
+
+<p>
+    Despite being mathematically incorrect, we choose the derivative at \(0\) to be \(0\) in order to have uninterrupted gradient computation.
+</p>
+
+<p>
+    Since tanh is applied element-wise, then \(Y_i\) is the only child of \(X_i\) in \(Y\). Therefore, \( (G_{XY})_i = \frac{dz}{dY_i} \cdot \frac{\partial Y_i}{\partial X_i}\).
+</p>
+
+<p>
+    Therefore the input gradient is obtained by multiplying the upstream gradient \(\frac{dz}{dY}\), at each index \(i\), by the value \(\left( 1 - \text{tanh}^2({X_i}) \right)\). This can be achieved via Hadamard product \(\frac{dz}{dY} \odot \left( 1 - \text{tanh}^2({X}) \right)\)
+</p>
+
+<h3>Code</h3>
+
+<p>
+    The following identity is used for numerical stability:
+</p>
+
+<p>
+    \[
+        \tanh(X_i) = \frac{e^{2X_i} - 1}{e^{2X_i} + 1}
+    \]
+</p>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def tanh(X):
+    # Compute output of module.
+    exp_2x = np.exp(2 * X)
+    output = (exp_2x - 1) / (exp_2x + 1)
+
+    # Create and connect node in computation graph.
+    output.node = Node()
+
+    input_nodes = []
+    backward_fn_params = {}
+
+    if X.node.propagate_grad or X.node.keep_grad:
+        input_nodes.append(X.node)
+        backward_fn_params["output"] = output
+
+    output.node.connect(input_nodes, tanh_backward, backward_fn_params)
+
+    return output
+
+
+# Backward definition.
+def tanh_backward(params, upstream):
+    # dX
+    return [upstream * ((1 - params["output"] ** 2))]</code></pre>
+
+
+

@@ -1,0 +1,150 @@
+<h2><code>cross_entropy_loss(X, y)</code></h2>
+<p><strong>Description:</strong> Computes the average cross entropy loss of batch of <b>logit</b> vectors X with respect to ground truths \(y\).</p>
+
+<h3>Parameters</h3>
+<ul>
+<li><code>X</code> (<em>Variable</em>): The input tensor of logits, which must be of shape \((N,C)\). Each row in the input represents the logits of a distribution over \(C\) categories <b>before</b> softmax is applied.</li>
+<li><code>y</code> (<em>Variable</em>): A tensor of ground truth labels, which must be of shape \((N,)\). There is precisely one label per row in the input tensor, and each label must be an integer between \(0\) (inclusive) and \(C\) (exclusive).</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>L</code> (<em>Variable</em>): A scalar representing the average cross entropy loss over the batch.</p>
+
+<h3>Theory</h3>
+
+<p>Let's consider a single row/label pair \(x = (x_1, x_2, \ldots, x_C)\) and \(y = t\) from the inputs, so \(x\) is a vector of logits and \(t\) is the index of the true category. In order to get the actual probability distribution, we apply softmax to \(x\). The reason the input does not already come as a probability distribution is because it is more numerically stable to treat softmax + cross entropy loss as one function from the point of view of the autodiff system.</p>
+
+<p>Let's calculate the derivative \(\frac{\partial L}{\partial x_r}\). Applying softmax to \(x\) we get the predicted probability distribution</p>
+
+<p>
+    \[
+        \begin{align}
+            \hat{y} &= \frac{1}{\sum_{j=1}^{C} e^{x_j}} 
+            \left[ e^{x_1}, e^{x_2}, \ldots, e^{x_C} \right],\\
+            &=\left[ \hat{y_1}, \hat{y_2}, \ldots, \hat{y_C} \right],\\ 
+        \end{align}
+    \]
+</p>
+
+<p>
+    so that \(\hat{y_r}\) is the probability assigned to category \(r\). Since the true label is \(t\), then the cross entropy loss is given by 
+</p>
+
+<p>
+    \[
+        \begin{align}
+            L 
+            &= -\text{log}(\hat{y_t}),\\
+            &= -\text{log}(\frac{e^{x_t}}{\sum_{j=1}^{C} e^{x_j}}),\\ 
+            &= -(\text{log}(e^{x_t}) - \text{log}(\sum_{j=1}^{C} e^{x_j})),\\
+            &= \text{log}(\sum_{j=1}^{C} e^{x_j}) - x_t.
+        \end{align}
+    \]
+</p>
+
+<p>From here we can compute \(\frac{\partial L}{\partial x_r}\):</p>
+
+<p>
+    \[
+        \begin{align}
+            \frac{\partial L}{\partial x_r}
+            &= \frac{d\: \text{log}(\sum_{j=1}^{C} e^{x_j})}{dx_r} - \frac{dx_t}{dx_r},\\
+            &= \frac{e^{x_r}}{\sum_{j=1}^{C} e^{x_j}} - \frac{dx_t}{dx_r}, \text{(applying the chain rule to log)},\\ 
+            &= \hat{y_r} - \frac{dx_t}{dx_r}, \\
+            &= \begin{cases}
+                \hat{y_r} - 0 & \text{if } r \neq t\\
+                \hat{y_r} - 1 & \text{if } r = t.
+            \end{cases}
+        \end{align}
+    \]
+</p>
+
+<p>
+    Let's think about why this result makes sense intuitively. Suppose we increased the value of \(x_r\) and \(r\) was not the true class. Then this would increase the predicted probability of the wrong class, so we would hope that the loss would increase. This is indeed the case: since \(\hat{y_r} - 0 \in (0,1)\) is always a positive number, then \(\frac{\partial L}{\partial x_r}\) is positive, meaning the loss increases given an increase in \(x_r\). Similarly, \(\hat{y_r} - 1 \in (-1,0)\) is always negative, and therefore increasing \(x_t\) decreases the loss. The takeaway is that there are two ways of decreasing cross entropy loss: increasing the raw logit of the correct class, or decreasing the raw logit of the incorrect classes.
+</p>
+
+<p>
+    I've shown the loss for a single instance in the batch, but the actually output loss \(L\) is the average over the batch: 
+</p>
+
+<p>
+    \[
+        \begin{align}
+            L 
+            &= \frac{1}{N} \sum_{i=1}^{N} -\text{log}(\hat{Y}_{iy_i}).\\
+        \end{align}
+    \]
+</p>
+
+<p>
+    Let's make sure we're on the same page and unpack the notation \(\hat{Y}_{iy_i}\) because it's a little jarring. \(\hat{Y}\) is the \(N \times C\) tensor representing the probability distributions over \(C\) classes for each of the \(N\) instances in the batch. On the other hand, \(y_i\) is the index of the true class for instance \(i\). Therefore, \(\hat{Y}_{iy_i}\) is the predicted probability of the true class for instance \(i\). 
+</p>
+
+<p>Continuing on, it follows that</p>
+<p>
+    \[
+        \frac{\partial L}{\partial X_{ij}} = 
+        \frac{1}{N} \times 
+        \begin{cases}
+            \hat{Y}_{ij} - 0 & \text{if } j \neq y_i\\
+            \hat{Y}_{ij} - 1 & \text{if } j = y_i.
+        \end{cases} 
+    \]
+</p>
+
+<p>
+    Since \(L\) is a scalar, then \(L\) is the only child (with respect to this function) for \(X_{ij}\). Therefore, the inductive chain rule gives 
+</p>
+
+<p>
+    \[
+        (G_{XL})_{ij} = \frac{dz}{dL} \times \frac{\partial L}{\partial X_{ij}}
+    \]
+</p>
+
+<p>
+    Furthermore, since \(L\) is a scalar, then the autodiff backward can be called on it directly, in which case \(z = L\) and \(\frac{dz}{dL} = 1\), and no upstream gradient is required for cross_entropy_loss_backward.
+</p>
+
+<p>
+    In terms of implementation, notice that \(\frac{1}{N} \times \frac{\partial L}{\partial X}\) is just \(\hat{Y}\) except with \(1\) subtracted from the true predictions. 
+</p>
+
+<h3>Code</h3>
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">import numpy as np
+from dl.functions.softmax import softmax
+from dl.graph import Node
+
+
+def cross_entropy_loss(X, y):
+
+    # Compute output of module.
+    probs = softmax(X)
+    output = np.average(-np.log(probs[np.arange(y.shape[0]), y]))
+
+    # Create and connect node in computation graph.
+    output.node = Node()
+
+    input_nodes = []
+    backward_fn_params = {}
+
+    if X.node.keep_grad or X.node.propagate_grad:
+        input_nodes.append(X.node)
+        backward_fn_params["y"] = y
+        backward_fn_params["probs"] = probs
+
+    output.node.connect(input_nodes, cross_entropy_loss_backward, backward_fn_params)
+
+    return output
+
+
+# Backward definition.
+def cross_entropy_loss_backward(params, upstream=None):
+    # dX
+    params["probs"][np.arange(params["y"].shape[0]), params["y"]] -= 1
+    params["probs"] /= params["y"].shape[0] # Divide by N
+
+    if upstream is None:
+        return [params["probs"]]
+    else:
+        return [params["probs"] * upstream] # upstream is dz/dL which is a scalar</code></pre>

@@ -1,0 +1,68 @@
+<h2><code>sigmoid(X)</code></h2>
+<p><strong>Description:</strong> Applies the sigmoid function element-wise to the input tensor, returning a new tensor of the same shape.</p>
+
+<h3>Parameters</h3>
+<ul>
+<li><code>X</code> (<em>Variable</em>): The input tensor, which can be of any shape.</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>Y</code> (<em>Variable</em>): A new tensor resulting from applying sigmoid to the input tensor.</p>
+
+<h3>Theory</h3>
+<p>
+    Suppose \(i\) is a (possibly multi-dimensional) index into \(X\). Then \(Y_i\) = \(\sigma(X_i) = \frac{1}{1 + e^{X_i}} \). Therefore, 
+</p>
+
+<p>
+    \[
+        \begin{align*}
+            \frac{dY_i}{d{X_i}} &= \frac{e^{X_i}}{(1 + e^{X_i})^2}, \quad \text{(apply chain rule,)} \\
+            &= \frac{1}{1 + e^{X_i}} \cdot \frac{e^{-{X_i}}}{1 + e^{-{X_i}}} \\
+            &= \sigma({X_i}) \left( \frac{1 + e^{-{X_i}} - 1}{1 + e^{-{X_i}}} \right) \\
+            &= \sigma({X_i}) \left( 1 - \sigma({X_i}) \right)
+        \end{align*}
+    \]  
+</p>
+
+<p>
+    Despite being mathematically incorrect, we choose the derivative at \(0\) to be \(0\) in order to have uninterrupted gradient computation.
+</p>
+
+<p>
+    Since sigmoid is applied element-wise, then \(Y_i\) is the only child of \(X_i\) in \(Y\). Therefore, \( (G_{XY})_i = \frac{dz}{dY_i} \cdot \frac{\partial Y_i}{\partial X_i}\).
+</p>
+
+<p>
+    Therefore the input gradient is obtained by multiplying the upstream gradient \(\frac{dz}{dY}\), at each index \(i\), by the value \(\sigma({X_i}) \left( 1 - \sigma({X_i}) \right)\). This can be achieved via Hadamard product \(\frac{dz}{dY} \odot \sigma({X}) \left( 1 - \sigma({X}) \right)\)
+</p>
+
+<h3>Code</h3>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def sigmoid(X):
+    # Compute output of module.
+    output = 1 / (1 + np.exp(-X))
+
+    # Create and connect node in computation graph.
+    output.node = Node()
+
+    input_nodes = []
+    backward_fn_params = {}
+
+    if X.node.propagate_grad or X.node.keep_grad:
+        input_nodes.append(X.node)
+        backward_fn_params["output"] = output
+
+    output.node.connect(input_nodes, sigmoid_backward, backward_fn_params)
+
+    return output
+
+
+# Backward definition.
+def sigmoid_backward(params, upstream):
+    # dX
+    return [upstream * (params["output"] * (1 - params["output"]))]
+</code></pre>
+
+
+

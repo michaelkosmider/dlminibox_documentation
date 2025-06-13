@@ -1,0 +1,75 @@
+<h2><code>matmul(A, B)</code></h2>
+<p><strong>Description:</strong> Returns the result of matrix multiplication between the input tensors.</p>
+
+<h3>Parameters</h3>
+<ul>
+<li><code>A</code> (<em>Variable</em>): The first input tensor, which can be of shape \((N,M)\).</li>
+<li><code>B</code> (<em>Variable</em>): The second input tensor, which must be of shape \((M,C)\) so that the colums of \(B\) match the rows of \(A\).</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>Y</code> (<em>Variable</em>): The result of matrix multiplication \(A \times B\).</p>
+
+<h3>Theory</h3>
+
+<p>
+    Let's revisit the theorem at the heart of matmul backwards.
+</p>
+
+<div class="theorem-box math-scrollable">
+    <div class="theorem-title">Result (Gradient of Scalar Function of Matrix Product)</div>
+
+
+    <p>
+        Let \( A \in \mathbb{R}^{m \times n} \), \( B \in \mathbb{R}^{n \times p} \) and \( Y = A \times B \). Furthermore let \( z = f(Y) \) where \(f\) is a scalar valued differentiable function. Then
+    </p>
+
+    <div id="matmul-backwards">
+        \[
+            \frac{dz}{dA} = \frac{dz}{dY} \times B^{\mathsf{T}}, \tag{3} \quad \text{and} \quad 
+            \frac{dz}{dB} = A^{\mathsf{T}} \times \frac{dz}{dY}.
+        \] 
+    </div>
+</div>
+
+<p>
+    It thus follows that \(G_{AY} = \frac{dz}{dY} \times B^{\mathsf{T}}\) and \(G_{BY} = A^{\mathsf{T}} \times \frac{dz}{dY}\). Thus, if we need to calculate \(G_{AY}\), we need to save \(B\) for the backwards pass, and for \(G_{BY}\) we need to save \(A\).
+</p>
+
+<h3>Code</h3>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def matmul(A, B):
+    # Compute output of function.
+    output = np.matmul(A, B)
+
+    # Create and connect node in computation graph.
+    output.node = Node()
+
+    input_nodes = []
+    backward_fn_params = {}
+
+    if A.node.propagate_grad or A.node.keep_grad:
+        input_nodes.append(A.node)
+        backward_fn_params["B"] = B
+
+    if B.node.propagate_grad or B.node.keep_grad:
+        input_nodes.append(B.node)
+        backward_fn_params["A"] = A
+
+    output.node.connect(input_nodes, matmul_backward, backward_fn_params)
+
+    return output
+
+
+def matmul_backward(params, upstream=None):
+    grads = []
+
+    # dA
+    if "B" in params:
+        grads.append(upstream @ params["B"].T)
+
+    # dB
+    if "A" in params:
+        grads.append(params["A"].T @ upstream)
+
+    return grads</code></pre>
