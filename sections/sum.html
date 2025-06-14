@@ -1,0 +1,95 @@
+<h2><code>sum(X, axis)</code></h2>
+<p><strong>Description:</strong> Returns a summation of the input tensor over the specified axes.</p>
+
+<h3>Parameters</h3>
+<ul>
+<li><code>X</code> (<em>Variable</em>): The input tensor, which can be of any shape.</li>
+<li><code>axis</code> (<em>Variable</em>): The tuple of axes to sum over.</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>Y</code> (<em>Variable</em>): The tensor resulting from summing \(X\) over the specified axes.</p>
+
+<h3>Theory</h3>
+<p>
+    Let's consider how summation over a set of axes actually works with an example. Suppose \(X\) is \(5\) dimensional, and thus has the shape \((d_0,d_1,d_2,d_3,d_4)\). Furthermore, suppose the axes specified are \((0,3)\). Then the output tensor \(Y\) has the shape \(d_1, d_2, d_4\), as axes \(0\) and \(3\) are removed. Here is how \(Y_{(2,5,1)}\) would be calculated:
+</p>
+
+<p>
+    \[
+        Y_{(2,5,1)} = \sum_{\substack{i = 0,1,\ldots,d_0 \\ j = 0,1,\ldots,d_3}} X_{(i,2,5,j,1)}
+    \]
+</p>
+
+<p>
+    The parents of \(Y_{(2,5,1)}\) in \(X\) are therefore 
+
+</p>
+
+<p>
+    \[
+        \{ X_{(i,2,5,j,1)} \text{ for } i = 0,1,\ldots,d_0 \text{ and } j = 0,1,\ldots,d_3\}
+    \]
+</p>
+
+<p>
+    and for each parent in that set, its only child is \(Y_{(2,5,1)}\). Thus, 
+</p>
+
+<p>
+    \begin{align}
+        (G_{XY})_{(i,2,5,j,1)}
+        &= \frac{dz}{dY_{(2,5,1)}} \cdot \frac{dY_{(2,5,1)}}{dX_{(i,2,5,j,1)}},\\
+        &= \frac{dz}{dY_{(2,5,1)}} \cdot 1,\\
+        &= \frac{dz}{dY_{(2,5,1)}}.
+    \end{align}
+</p>
+
+<p>
+    Since \((G_{XY})_{(i,2,5,j,1)} = \frac{dz}{dY_{(2,5,1)}}\) for all \(i = 0,1,\ldots,d_0\) and \(j = 0,1,\ldots,d_3\), and more generally all parents inherit the upstream derivative of their single child, it suffices to broadcast \(\frac{dz}{dY}\) back to the shape of \(X\) in order to obtain \((G_{XY})\). 
+</p>
+
+<p>
+    Broadcasting can be achieved by first expanding the dimensions of \(\frac{dz}{dY}\) to re-include the removed axes, achieved by expanded_upstream = np.expand_dims(upstream, params["axis"]), resulting in a shape of \((1,d_1,d_2,1,d_4)\). This expanded upstream is then broadcasted using np.broadcast_to(expanded_upstream, params["input_shape"]) back to the shape of \(X\).
+</p>
+
+<p>
+    If the result of the summation is a scalar, meaning we summed over all axes, and no upstream is provided meaning \(z = Y\), then (G_{XY}) is a tensor of ones of the same shape as \(X\).
+</p>
+
+<!-- <p>
+    More generally, to sum a tensor over a set of axes, the output tensor has those axes removed. Then for each index in the output tensor, fix that portion of the index in the input tensor, and sum over all remaining indices. For each element \(X_i\) in the input tensor, its only child is the element \(Y_j\) in the output tensor, where \(j\) is \(i\) with the summation axes removed. 
+</p> -->
+
+<h3>Code</h3>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def sum(X, axis=None):
+    # Compute output of module.
+    output = np.sum(X, axis=axis)
+
+    # Create and connect node in computation graph.
+    output.node = Node()
+
+    input_nodes = []
+    backward_fn_params = {}
+
+    if X.node.propagate_grad or X.node.keep_grad:
+        input_nodes.append(X.node)
+        backward_fn_params["axis"] = axis
+        backward_fn_params["input_shape"] = X.shape
+
+    output.node.connect(input_nodes, sum_backward, backward_fn_params)
+
+    return output
+
+
+# Backward definition.
+def sum_backward(params, upstream):
+    # dX
+    if upstream is not None:
+        expanded_upstream = np.expand_dims(upstream, params["axis"])
+        dX = np.broadcast_to(expanded_upstream, params["input_shape"])
+
+    else:
+        dX = np.ones(params["input_shape"])
+    return [dX]</code></pre>

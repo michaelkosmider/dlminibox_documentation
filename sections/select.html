@@ -1,5 +1,5 @@
-<h2><code>relu(X)</code></h2>
-<p><strong>Description:</strong> Applies the rectified linear unit function element-wise to the input tensor, returning a new tensor of the same shape. In other words, outputs a tensor resulting from replacing every negative entry in the input tensor with \(0\).</p>
+<h2><code>select(X, *indices)</code></h2>
+<p><strong>Description:</strong> Selects elements from the input tensor given the indices. Functions exactly the same as the numpy square brackets operator, except that slices must be passed in using the slice() function. The returned tensor is either a view or a copy depending on the type of indices passed in.</p>
 
 <h3>Parameters</h3>
 <ul>
@@ -7,30 +7,52 @@
 </ul>
 
 <h3>Returns</h3>
-<p><code>Y</code> (<em>Variable</em>): A new tensor resulting from applying relu to the input tensor.</p>
+<p><code>Y</code> (<em>Variable</em>): A new tensor resulting from selecting the indices.</p>
 
 <h3>Theory</h3>
-Suppose \(i\) is a (possibly multi-dimensional) index into \(X\). Then \(Y_i\) = max\((0,X_i)\). Therefore, 
-
-\[
-\frac{\partial Y_i}{\partial X_i} = \begin{cases}
-  1 & \text{if } X_i > 0 \text{ (equivalently, }Y_i > 0 \text{)}\\
-  0  & \text{otherwise.}
-\end{cases}
-\]
-
-<p>Even though mathematically incorrect, we choose the derivative at \(0\) to be \(0\) in order to have uninterrupted gradient computation.</p>
-
-<p>Since relu is applied element-wise, then \(Y_i\) is the only child of \(X_i\) in \(Y\). Therefore, \( (G_{XY})_i = \frac{dz}{dY_i} \cdot \frac{\partial Y_i}{\partial X_i}\).</p>
 
 <p>
-    Therefore the input gradient is equal to the upstream gradient zeroed out anywhere the output was 0 or less. Hence, \((G_{XY})\) (also denoted dX) is given by \(\frac{dz}{dY_i} \cdot (Y > 0)\).
+    This function is a little bit different from the other functions in this library. It does not actually apply any function to elements of the input tensor, but instead selects elements from it. Let's take a closer look.
 </p>
+
+<p>
+    Let \(i\) be an (possibly multidimensional) index into \(X\). There are three cases to consider: 
+</p>
+
+<ol>
+    <li>
+        \(X_i\) does not appear in the output. Then \((G_{XY})_i = 0\).
+    </li>
+
+    <li>
+        \(X_i\) appears exactly once in the output at some index \(j\), meaning that \(Y_j = X_i\). Then \((G_{XY})_i = \frac{dz}{dY_j}\). 
+    </li>
+
+    <li>
+        \(X_i\) appears more than once in the output at indices \(j_1, j_2, \ldots, j_n\). This can occur with fancy indexing, which allows you to select the same index more than once. In this case, Then \((G_{XY})_i = \sum_{k=1}^{n} \frac{dz}{dY_{j_k}}\), by the inductive chain rule (note: \(\frac{dY_{j_k}}{dX_i} = 1\)).
+    </li>
+</ol>
+
+<p>
+    In all cases, we are invoking the inductive chain rule. If \(X_i\) is mapped to \(Y_j\), then 
+</p>
+
 <h3>Code</h3>
-<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def relu(X):
+
+<p>
+    The strategy is to initialize \(G_{XY}\) as a zero tensor the same shape as \(X\). Then all unselected entries already have the correct derivative. Next, the np.add.at(grad, params["indices"], upstream) works as follows: For each entry \(\frac{dz}{dY_j}\) in upstream, it consults the indices stored in params["indices"] to figure out which index \(i\) in \(X\) was mapped to \(j\). In then increments \((G_{XY})_i\) (stored in grad) by \(\frac{dz}{dY_j}\).
+</p>
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def select(X, *indices):
 
     # Compute output of module.
-    output = np.maximum(0, X)
+    if len(indices) == 1:
+        indices = indices[0]
+
+    output = X[indices]
+
+    # Can happen if output is a scalar.
+    if not isinstance(output, Variable):
+        output = Variable(output)
 
     # Create and connect node in computation graph.
     output.node = Node()
@@ -38,15 +60,22 @@ Suppose \(i\) is a (possibly multi-dimensional) index into \(X\). Then \(Y_i\) =
     input_nodes = []
     backward_fn_params = {}
 
-    if X.node.propagate_grad or X.node.keep_grad:
+    if X.node.keep_grad or X.node.propagate_grad:
         input_nodes.append(X.node)
-        backward_fn_params["output"] = output
+        backward_fn_params["shape"] = X.shape
+        backward_fn_params["indices"] = indices
 
-    output.node.connect(input_nodes, relu_backward, backward_fn_params)
+    output.node.connect(input_nodes, select_backward, backward_fn_params)
 
     return output
 
 
-def relu_backward(params, upstream):
-    dX = [upstream * (1 * (params["output"] > 0))]
-    return dX</code></pre>
+def select_backward(params, upstream=None):
+
+    if upstream is None:
+        upstream = 1.0
+
+    grad = np.zeros(params["shape"], dtype=np.float64)
+    np.add.at(grad, params["indices"], upstream)
+
+    return [grad]</code></pre>
