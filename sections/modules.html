@@ -1,0 +1,44 @@
+<h1>Modules</h1>
+
+<p>
+    We have seen that functions map tensors to tensors while the autodiff system keeps track of the computation graph. Modules are similar to functions, except that they are parametrized. What this means is the module itself stores a part of the input, instead of having all inputs passed in, and the stored part of the input remains the same across all calls to the module (unless the stored input is updated). 
+</p>
+
+<p>
+    The Linear module is a great example. Recall that a Linear layer stores a tensor of weights \(W \in \mathbb{R}^{D \times C}\) as well as a bias tensor \(b \in \mathbb{R}^{C}\). Its output is \(X \times W + b\), where \(X \in \mathbb{R}^{N \times D}\) is passed into the module and represents a batch of \(N\) instances of size \(D\). 
+</p>
+
+<p>
+    AI models are created by defining custom modules, which is very similar to how it's done in PyTorch. In order to define a module, extend the Module class, and assign submodules as attributes. Then, define the forward method. Here's how you'd build a multi layer perceptron: 
+</p>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">class MLP(Module):
+
+    def __init__(self):
+        super().__init__()
+
+        # Assign your submodules here as attributes.
+        self.lin1 = Linear(784, 128)
+        self.relu1 = ReLU()
+        self.lin2 = Linear(128, 64)
+        self.relu2 = ReLU()
+        self.lin3 = Linear(64, 10)
+
+    def forward(self, X):
+
+        # Use your submodules to compute something for forward. Autograd happens here.
+        X = self.lin1(X)
+        X = self.relu1(X)
+        X = self.lin2(X)
+        X = self.relu2(X)
+        X = self.lin3(X)
+
+        return X</code></pre>
+
+<p>
+    You can also assign parameters as attributes to modules. The Parameter class is identical to the Variable class except that when a Parameter is assigned as an attribute to a Module, then the Module stores it its Parameter dictionary. All parameters of a module, including those of its submodules, can be returned through .parameters(). 
+</p>
+
+<p>
+    Given the recursive nature of modules, it's useful to keep track of the overall layout using .print().
+</p>

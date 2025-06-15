@@ -1,52 +1,47 @@
-<h2><code>relu(X)</code></h2>
-<p><strong>Description:</strong> Applies the rectified linear unit function element-wise to the input tensor, returning a new tensor of the same shape. In other words, outputs a tensor resulting from replacing every negative entry in the input tensor with \(0\).</p>
+<h2><code>Linear(X)</code></h2>
+<p><strong>Description:</strong> Applies a linear transformation to the input.</p>
 
 <h3>Parameters</h3>
 <ul>
-<li><code>X</code> (<em>Variable</em>): The input tensor, which can be of any shape.</li>
+<li><code>X</code> (<em>Variable</em>): The input tensor, must be of shape \(N \times D\). It typically represents a batch of \(N\) instances of size \(D\).</li>
 </ul>
 
 <h3>Returns</h3>
-<p><code>Y</code> (<em>Variable</em>): A new tensor resulting from applying relu to the input tensor.</p>
+<p><code>Y</code> (<em>Variable</em>): A tensor of size \(N \times C\).</p>
 
 <h3>Theory</h3>
-Suppose \(i\) is a (possibly multi-dimensional) index into \(X\). Then \(Y_i\) = max\((0,X_i)\). Therefore, 
-
-\[
-\frac{\partial Y_i}{\partial X_i} = \begin{cases}
-  1 & \text{if } X_i > 0 \text{ (equivalently, }Y_i > 0 \text{)}\\
-  0  & \text{otherwise.}
-\end{cases}
-\]
-
-<p>Even though mathematically incorrect, we choose the derivative at \(0\) to be \(0\) in order to have uninterrupted gradient computation.</p>
-
-<p>Since relu is applied element-wise, then \(Y_i\) is the only child of \(X_i\) in \(Y\). Therefore, \( (G_{XY})_i = \frac{dz}{dY_i} \cdot \frac{\partial Y_i}{\partial X_i}\).</p>
 
 <p>
-    Therefore the input gradient is equal to the upstream gradient zeroed out anywhere the output was 0 or less. Hence, \((G_{XY})\) (also denoted dX) is given by \(\frac{dz}{dY_i} \cdot (Y > 0)\).
+    This Module contains two parameters: a tensor of weights \(W \in \mathbb{R}^{D \times C}\) as well as a bias \(b \in \mathbb{R}^{C}\). Given the input \(X\), it outputs \(Y = X \times W + b\), where addition of the bias term is broadcasted in the batch dimension. In terms of the backwards pass, we've done all the hard work already! The output can be computed by using add() and matmul(), which already track gradients. 
 </p>
+
 <h3>Code</h3>
-<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def relu(X):
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">class Linear(Module):
+    # Module initialization.
+    def __init__(self, input_size, output_size, param_init="xavier"):
+        super().__init__()
 
-    # Compute output of module.
-    output = np.maximum(0, X)
+        # Store hyper_parameters for print_module()
+        self._hyper_parameters["input_size"] = input_size
+        self._hyper_parameters["output_size"] = output_size
+        self._hyper_parameters["param_init"] = param_init
 
-    # Create and connect node in computation graph.
-    output.node = Node()
+        # Bias initialized to 0.
+        self.b = Parameter(np.zeros(output_size), keep_grad=True)
 
-    input_nodes = []
-    backward_fn_params = {}
+        # Weights are initialized using xavier initialization.
+        if param_init == "xavier":
+            xavier_range = np.sqrt(6 / (1 + input_size + output_size))
+            self.W = Parameter(
+                np.random.uniform(
+                    -xavier_range, xavier_range, size=(input_size, output_size)
+                ),
+                keep_grad=True,
+            )
 
-    if X.node.propagate_grad or X.node.keep_grad:
-        input_nodes.append(X.node)
-        backward_fn_params["output"] = output
+    def forward(self, X):
 
-    output.node.connect(input_nodes, relu_backward, backward_fn_params)
+        X = matmul(X, self.W)
+        X = add(X, self.b)
 
-    return output
-
-
-def relu_backward(params, upstream):
-    dX = [upstream * (1 * (params["output"] > 0))]
-    return dX</code></pre>
+        return X</code></pre>

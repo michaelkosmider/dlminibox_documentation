@@ -1,0 +1,117 @@
+<h2><code>add(A,B)</code></h2>
+<p><strong>Description:</strong> Adds the two input tensors. Broadcasts when applicable.</p>
+
+<h3>Parameters</h3>
+<ul>
+<li><code>A</code> (<em>Variable</em>): The first input tensor, which can be of any shape.</li>
+<li><code>B</code> (<em>Variable</em>): The second input tensor, which must be broadcastable with \(A\)</li>
+</ul>
+</ul>
+
+<h3>Returns</h3>
+<p><code>Y</code> (<em>Variable</em>): The output tensor, which may have a new shape as a result of broadcasting.</p>
+
+<h3>Theory</h3>
+<p>
+    If we disallow broadcasting, then the input tensors are of the same shape and the theory is straightforward. Let \(i\) be an index into \(A\). Then \(Y_i\) is the only child of \(A\) and since \(Y_i = A_i + B_i\), then
+</p>
+
+<p>
+    \begin{align}
+        (G_{AY})_i 
+        &= \frac{dz}{dY_i} \cdot \frac{dY_i}{dA_i}, \text{ (inductive chain rule) },\\
+        &= \frac{dz}{dY_i} \cdot 1, \\
+        &= \frac{dz}{dY_i}.
+    \end{align}
+</p>
+
+<p>
+    and so \(G_{AY} = \frac{dz}{dY}\). The input gradients are both just the upstream gradient. But we are indeed going to implement broadcasting, which makes the gradient calculation more complex. Let's make things concrete with an example.
+</p>
+
+<p>
+    If you are not yet familiar with summations over axes, I recommend reading the section on "sum" before continuing.
+</p>
+
+<p>
+    Suppose \(A\) has the shape \((5,9,3,1)\) and \(B\) has the shape \((1,3,7)\). The shape of the output is then \((5,9,3,7)\), and \(B\) implicitly has a singleton dimension added to become of shape \((1,1,3,7)\) prior to broadcasting. Consider now the entry \(A_{(i,j,k,0)}\). Since dimension \(3\) becomes stretched to have size \(7\), the children of \(A_{(i,j,k,0)}\) are \(\{Y_{(i,j,k,n)} \text{ for } n = 0,1,\ldots, 6\}\), and so
+</p>
+
+<p>
+    \begin{align}
+        (G_{AY})_{(i,j,k,0)} 
+        &= \sum_{n = 0}^{6} \frac{dz}{dY_{(i,j,k,n)}} \cdot \frac{dY_{(i,j,k,n)}}{dA_{(i,j,k,0)}},\\
+        &= \sum_{n = 0}^{6} \frac{dz}{dY_{(i,j,k,n)}},\\
+    \end{align}
+</p>
+
+
+<p>
+    Which demonstrates that \(G_{AY}\) is obtained by summing the upstream gradient over dimension \(3\), which is the dimension in \(A\) that was stretched. More generally, the input gradient for either input is obtained by summing the upstream gradient over the axes that were stretched in the input. Remember, the upstream gradient has the broadcasted shape.
+</p>
+
+<h3>Code</h3>
+
+<p>
+    The tricky part about the implementation is figuring out which axes to sum the upstream over for both inputs. We need to store the shapes of both inputs and the output tensor and deduce which axes in the inputs were expanded. 
+</p>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def add(A, B):
+    # Compute output of module.
+    output = np.add(A, B)
+
+    # Create and connect node in computation graph.
+    output.node = Node()
+
+    input_nodes = []
+    backward_fn_params = {}
+
+    if A.node.propagate_grad or A.node.keep_grad:
+        backward_fn_params["A_shape"] = A.shape
+        input_nodes.append(A.node)
+
+    if B.node.propagate_grad or B.node.keep_grad:
+        backward_fn_params["B_shape"] = B.shape
+        input_nodes.append(B.node)
+
+    if len(input_nodes) > 0:
+        backward_fn_params["Y_shape"] = output.shape
+
+    output.node.connect(input_nodes, add_backward, backward_fn_params)
+
+    return output
+
+
+# Backward definition.
+def add_backward(params, upstream):
+    grads = []
+
+    # G_AY
+    if "A_shape" in params:
+        axis = deduce_axis(params["A_shape"], params["Y_shape"])
+        G_AY = np.sum(upstream, axis=axis, keepdims=True)
+        G_AY = np.reshape(G_AY, params["A_shape"])  # Remove padding dimensions.
+        grads.append(G_AY)
+
+    if "B_shape" in params:
+        axis = deduce_axis(params["B_shape"], params["Y_shape"])
+        G_BY = np.sum(upstream, axis=axis, keepdims=True)
+        G_BY = np.reshape(G_BY, params["B_shape"])
+        grads.append(G_BY)
+
+    return grads
+
+
+def deduce_axis(in_shape, out_shape):
+
+    # Pad input shape with singleton dimensions.
+    padding_needed = len(out_shape) - len(in_shape)
+    in_shape = (1,) * padding_needed + in_shape
+
+    axis = []
+    for i in range(len(out_shape)):
+        if in_shape[i] == 1 and out_shape[i] != 1:
+            axis.append(i)
+
+    return tuple(axis)
+</code></pre>
