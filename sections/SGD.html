@@ -1,7 +1,7 @@
 <h2><code>SGD(parameters, learning_rate=0.01, weight_decay=1e-4, momentum=None)</code></h2>
 <p><strong>Description:</strong> The stochastic gradient descent optimizer, which optionally applies weight decay and momentum. </p>
 
-<h3>__init __ Parameters</h3>
+<h3><code>__init __</code> Parameters</h3>
 <ul>
 <li><code>parameters</code> (<em>list</em>): A list containing elements of type Parameter.</li>
 <li><code>learning_rate</code> (<em>float</em>): A float representing how much to move the weights in the opposite direction of the gradient.</li>
@@ -25,14 +25,14 @@
 </p>
 
 <p>
-    where \(W_0\) represents the parameter when it is first initialized. Here, \(i\) is not to be confused with an index, and \(W_i\) just represents the parameter \(W\) after \(i\) updates. With momentum, the update rule is a little bit different. We initialize a velocity \(v_0\) to be a tensor of zeros the same shape as \(\frac{dz}{dW_0}\), and then (with momentum \(\mu\)):
+    where \(W_0\) represents the parameter when it is first initialized. Here, \(i\) is not to be confused with an index, and \(W_i\) just represents the parameter Z\(W\) after \(i\) updates. With momentum, the update rule is a little bit different. We initialize a velocity \(v_0\) to be a tensor of zeros the same shape as \(\frac{dz}{dW_0}\), and then (with momentum \(\mu\)):
 </p>
 
 <p>
     \[
         \begin{aligned}
-            v_{t+1} &= \mu v_t - \eta \frac{dz}{dW_i} \\
-            W{t+1} &= W_t + v_{t+1}.
+            v_{i+1} &= \mu v_i - \eta \frac{dz}{dW_i} \\
+            W_{i+1} &= W_i + v_{i+1}.
         \end{aligned}
     \]
 </p>

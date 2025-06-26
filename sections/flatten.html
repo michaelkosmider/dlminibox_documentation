@@ -1,1 +1,53 @@
-In progress!
+<h2><code>flatten(X, start_axis=1, end_axis=-1)</code></h2>
+<p><strong>Description:</strong> Flattens the input from the start_axis to the end_axis.</p>
+
+<h3>Parameters</h3>
+<ul>
+<li><code>X</code> (<em>Variable</em>): The input tensor, which can be of any shape.</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>Y</code> (<em>Variable</em>): A new tensor resulting from flattening the input tensor.</p>
+
+<h3>Theory</h3>
+
+<p>
+    Each scalar in the input has exactly one child in the output, and its child has the same value. Therefore, the input gradient is the upstream gradient \(\frac{dz}{dY}\) reshaped to the input shape.
+</p>
+
+<h3>Code</h3>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">def flatten(X, start_axis=1, end_axis=-1):
+    # Compute output of module.
+
+    oldshape = X.data.shape
+
+    if end_axis < 0:
+        end_axis = len(oldshape) - end_axis
+    if start_axis < 0:
+        start_axis = len(oldshape) - start_axis
+
+    newshape = (
+        oldshape[:start_axis]
+        + (np.prod(oldshape[start_axis : end_axis + 1]),)
+        + oldshape[end_axis + 1 :]
+    )
+    Y_data = np.reshape(X.data, newshape)
+    Y = Variable(Y_data)
+
+    # Connect node in computation graph.
+    input_nodes = []
+    backward_fn_params = {}
+
+    if X.node.propagate_grad or X.node.keep_grad:
+        input_nodes.append(X.node)
+        backward_fn_params["X_shape"] = oldshape
+
+    Y.node.connect(input_nodes, flatten_backward, backward_fn_params)
+
+    return Y
+
+
+def flatten_backward(params, dY):
+    G_XY = np.reshape(dY, params["X_shape"])
+    return [G_XY]</code></pre>

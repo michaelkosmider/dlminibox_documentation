@@ -1,1 +1,117 @@
-In progress!
+<h2><code>MaxPool(X)</code></h2>
+<p><strong>Description:</strong> Computes a 2D maxpool over a 3D image.</p>
+
+<h3><code>__init__</code>Parameters</h3>
+<ul>
+<li><code>K</code> (<em>int</em>): The width and height of the MaxPool kernel.</li>
+<li><code>stride</code> (<em>int</em>): The stride of the MaxPool operation.</li>
+<li><code>padding</code> (<em>int</em>): The padding applied to both sides of the height and width dimensions of the input image.</li>
+</ul>
+
+<h3><code>__call__</code>Parameters</h3>
+<ul>
+<li><code>X</code> (<em>Variable</em>): The input tensor, must be of shape \((N, C_{in}, H, W)\), representing a batch of 3D images.</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>Y</code> (<em>Variable</em>): A tensor of shape \((N, C_{in}, H_{out}, W_{out})\), where \(H_{out}\) and \(W_{out}\) are given by</p>
+
+<p>
+    \[
+    H_{out} = \text{floor}(\frac{H + 2 \times \text{padding} - K}{\text{stride}}).
+    \]
+</p>
+
+<h3>Theory</h3>
+
+<p>
+    Coming soon!
+</p>
+
+<h3>Code</h3>
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">class MaxPool(Module):
+    def __init__(self, K=2, stride=1):
+        super().__init__()
+
+        self.K = K
+        self.stride = stride
+
+    def forward(self, X):
+        N, C_in, H, W = X.data.shape
+
+        X_windows = sliding_window_view(
+            X.data, window_shape=(1, self.K, self.K), axis=(1, 2, 3)
+        )
+        X_windows = X_windows[:, :, :: self.stride, :: self.stride]
+        X_rows = np.reshape(X_windows, (-1, 1 * self.K * self.K))
+        patch_flat_maxes = np.max(X_rows, axis=1)
+
+        H_out = (H - self.K) // self.stride + 1
+        W_out = (W - self.K) // self.stride + 1
+        Y_data = np.reshape(patch_flat_maxes, (N, C_in, H_out, W_out))
+        Y = Variable(Y_data)
+
+        input_nodes = []
+        backward_fn_params = {}
+
+        if X.node.keep_grad or X.node.propagate_grad:
+            input_nodes.append(X.node)
+
+            backward_fn_params["X"] = X.data
+            backward_fn_params["K"] = self.K
+            backward_fn_params["stride"] = self.stride
+
+        Y.node.connect(input_nodes, max_pool_backward, backward_fn_params)
+
+        return Y
+
+
+def max_pool_backward(params, dY=None):
+    X = params["X"]
+    K = params["K"]
+    stride = params["stride"]
+
+    N, C_in, H, W = X.shape
+    X_windows = sliding_window_view(X, window_shape=(1, K, K), axis=(1, 2, 3))
+    X_windows = X_windows[:, :, ::stride, ::stride]
+
+    H_out = (H - K) // stride + 1
+    W_out = (W - K) // stride + 1
+
+    X_rows = np.reshape(X_windows, (-1, 1 * K * K))
+
+    # For each row, recover the input index corresponding to the argmax of that row.
+    patch_flat_indices = np.argmax(X_rows, axis=1)
+    patch_indices = np.unravel_index(
+        patch_flat_indices, shape=(K, K)
+    )  # 2d index relative to the window.
+
+    offset_W = np.tile(np.arange(W_out) * stride, H_out)
+    offset_W = np.tile(offset_W, C_in)
+    offset_W = np.tile(offset_W, N)
+
+    offset_H = np.repeat(np.arange(H_out) * stride, W_out)
+    offset_H = np.tile(offset_H, C_in)
+    offset_H = np.tile(offset_H, N)
+
+    offset_C_in = np.repeat(np.arange(C_in), H_out * W_out)
+    offset_C_in = np.tile(offset_C_in, N)
+
+    offset_N = np.repeat(np.arange(N), C_in * H_out * W_out)
+
+    indices_W = patch_indices[1] + offset_W
+    indices_H = patch_indices[0] + offset_H
+    indices_C_in = offset_C_in
+    indices_N = offset_N
+
+    # Indices is now a tuple of 4 arrays, each of length N * C_in * H_out * W_out, which
+    # is the number of rows in X_rows. For each row, its argmax has a corresponding
+    # 4d index in the input shape, which is exactly what indices contains.
+    indices = (indices_N, indices_C_in, indices_H, indices_W)
+
+    dY = np.reshape(dY, (-1))
+
+    G_XY = np.zeros(X.shape)
+    np.add.at(G_XY, indices, dY)
+
+    return [G_XY]</code></pre>
