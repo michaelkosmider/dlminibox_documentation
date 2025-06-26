@@ -1,1 +1,88 @@
-In progress!
+<h2><code>SGD(parameters, learning_rate=0.01, weight_decay=1e-4, momentum=None)</code></h2>
+<p><strong>Description:</strong> The stochastic gradient descent optimizer, which optionally applies weight decay and momentum. </p>
+
+<h3>__init __ Parameters</h3>
+<ul>
+<li><code>parameters</code> (<em>list</em>): A list containing elements of type Parameter.</li>
+<li><code>learning_rate</code> (<em>float</em>): A float representing how much to move the weights in the opposite direction of the gradient.</li>
+<li><code>weight_decay</code> (<em>float</em>): A float representing weight penalty.</li>
+<li><code>momentum</code> (<em>float</em>): A float representing the momentum to apply.</li>
+</ul>
+
+<h3>Returns</h3>
+<p><code>SGD</code>: An instance of the SGD class.</p>
+
+<h3>Theory</h3>
+
+<p>
+    Letting \(\eta\) be the learning rate, the SGD update rule (without momentum) for parameter \(W\) is given by 
+</p>
+
+<p>
+    \[
+        W_{i+1} = W_i - \eta \frac{dz}{dW_i}
+    \]
+</p>
+
+<p>
+    where \(W_0\) represents the parameter when it is first initialized. Here, \(i\) is not to be confused with an index, and \(W_i\) just represents the parameter \(W\) after \(i\) updates. With momentum, the update rule is a little bit different. We initialize a velocity \(v_0\) to be a tensor of zeros the same shape as \(\frac{dz}{dW_0}\), and then (with momentum \(\mu\)):
+</p>
+
+<p>
+    \[
+        \begin{aligned}
+            v_{t+1} &= \mu v_t - \eta \frac{dz}{dW_i} \\
+            W{t+1} &= W_t + v_{t+1}.
+        \end{aligned}
+    \]
+</p>
+
+<p>
+    In this way, previously calculated gradients are factored into the current update, and observe that setting the momentum to 0 is equivalent to SGD without momentum.
+</p>
+
+<h3>Code</h3>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">class SGD(Optimizer):
+    def __init__(
+        self, parameters, learning_rate=0.01, weight_decay=1e-4, momentum=None
+    ):
+        super().__init__()
+
+        self.parameters = parameters
+        self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
+        self.momentum = momentum
+
+        if momentum is not None:
+            self.velocities = [np.zeros_like(p.data) for p in self.parameters]
+
+    def update_parameters(self):
+
+        if self.momentum is not None:
+
+            for param, velocity in zip(self.parameters, self.velocities):
+
+                if param.grad is None:
+                    continue
+
+                # The actual gradient at the current weights.
+                grad = param.grad + self.weight_decay * param.data
+
+                # Update the velocity based on the gradient.
+                velocity *= self.momentum
+                velocity -= self.learning_rate * grad
+
+                # Update parameters based on new velocity.
+                param.data += velocity
+
+        else:
+
+            for param in self.parameters:
+
+                if param.grad is None:
+                    continue
+
+                grad = param.grad + self.weight_decay * param.data
+
+                param.data -= self.learning_rate * grad</code></pre>

@@ -7510,12 +7510,12 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [54]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
@@ -7525,15 +7525,60 @@ a.anchor-link {
 </div>
 </div>
 </div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>The autoreload extension is already loaded. To reload it, use:
+  %reload_ext autoreload
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Imports.">Imports.<a class="anchor-link" href="#Imports.">¶</a></h2>
+</div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [55]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dl</span><span class="w"> </span><span class="kn">import</span> <span class="n">Module</span> <span class="c1"># Always import this if you wish to build your own Module using existing Modules. </span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dl.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">Linear</span><span class="p">,</span> <span class="n">ReLU</span> <span class="c1"># Typical modules found in a multilayer perceptron.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dl.optimizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">SGD</span> <span class="c1"># We need this to update model weights.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dl.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchLoader</span><span class="p">,</span> <span class="n">train_val_split</span><span class="p">,</span> <span class="n">accuracy</span> <span class="c1"># We will pass in in our training data into a batchloader, similar to the PyTorch DataLoader.</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dl.data.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">ToVariable</span><span class="p">,</span> <span class="n">ToFloat</span><span class="p">,</span> <span class="n">Normalize</span><span class="p">,</span> <span class="n">ComposeTransforms</span> <span class="c1"># The transformations done to raw numpy image and label instances, before being passed into the model.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dl.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">cross_entropy_loss</span> <span class="c1"># We need this to evaluate the quality of our current model weights with respect to a batch.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dl</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span> <span class="c1"># The datatype used by this framework, which wraps NumPy arrays. It is within Variables, and specifically the .node attribute, that autograd takes place. </span>
+
+<span class="c1"># For vizualizing output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="c1"># For downloading MNIST</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_openml</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 </pre></div>
 </div>
 </div>
@@ -7550,44 +7595,114 @@ a.anchor-link {
 </div>
 </div>
 </div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [56]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Optional: Set a data cache directory</span>
+<span class="n">data_home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"data"</span><span class="p">,</span> <span class="s2">"mnist"</span><span class="p">)</span>
+
+<span class="c1"># Download and cache MNIST (70000 samples)</span>
+<span class="n">mnist</span> <span class="o">=</span> <span class="n">fetch_openml</span><span class="p">(</span><span class="s1">'mnist_784'</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">data_home</span><span class="o">=</span><span class="n">data_home</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Access the data</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">mnist</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">mnist</span><span class="o">.</span><span class="n">target</span>  <span class="c1"># X is (70000, 784), y is (70000,)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Data shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Labels shape: </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">X_train_full</span><span class="p">,</span> <span class="n">y_train_full</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:</span><span class="mi">60000</span><span class="p">],</span> <span class="n">y</span><span class="p">[:</span><span class="mi">60000</span><span class="p">]</span>
+<span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_val</span><span class="p">,</span> <span class="n">y_val</span> <span class="o">=</span> <span class="n">train_val_split</span><span class="p">(</span><span class="n">X_train_full</span><span class="p">,</span> <span class="n">y_train_full</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+
+<span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">60000</span><span class="p">:],</span> <span class="n">y</span><span class="p">[</span><span class="mi">60000</span><span class="p">:]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Data shape: (70000, 784)
+Labels shape: (70000,)
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [57]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Extracting data directly from csv.</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define image transforms (division by 255.0 and normalization)</span>
 
-<span class="n">mnist_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="s1">'./data/mnist_train.csv'</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">','</span><span class="p">)</span>
-<span class="n">mnist_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="s1">'./data/mnist_test.csv'</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">','</span><span class="p">)</span>
+<span class="c1"># Compute normalization statistics.</span>
+<span class="n">X_for_stats</span> <span class="o">=</span> <span class="n">X_train_full</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span>
+<span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">X_for_stats</span><span class="p">)</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">X_for_stats</span><span class="p">)</span>
 
-<span class="c1"># Splitting the data into features and labels.</span>
+<span class="n">image_transforms</span> <span class="o">=</span> <span class="n">ComposeTransforms</span><span class="p">([</span><span class="n">ToFloat</span><span class="p">(</span><span class="mf">255.0</span><span class="p">),</span> <span class="n">Normalize</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">),</span> <span class="n">ToVariable</span><span class="p">()])</span>
+<span class="n">label_transforms</span> <span class="o">=</span> <span class="n">ToVariable</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [58]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define the dataset and batchloaders.</span>
 
-<span class="n">X_train</span> <span class="o">=</span> <span class="n">mnist_train</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span><span class="mi">1</span><span class="p">:]</span>
-<span class="n">y_train</span> <span class="o">=</span> <span class="n">mnist_train</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-
-<span class="n">X_test</span> <span class="o">=</span> <span class="n">mnist_test</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span><span class="mi">1</span><span class="p">:]</span>
-<span class="n">y_test</span> <span class="o">=</span> <span class="n">mnist_test</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-
-<span class="c1"># Splitting off a part of training set for validation.</span>
-
-<span class="n">N_train</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">N_train</span><span class="p">)</span>
-<span class="n">split_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N_train</span><span class="o">*</span><span class="mf">0.8</span><span class="p">)</span>
-
-
-<span class="n">X_valid</span> <span class="o">=</span> <span class="n">X_train</span><span class="p">[</span><span class="n">order</span><span class="p">][</span><span class="n">split_index</span><span class="p">:]</span>
-<span class="n">X_train</span> <span class="o">=</span> <span class="n">X_train</span><span class="p">[</span><span class="n">order</span><span class="p">][:</span><span class="n">split_index</span><span class="p">]</span>
-<span class="n">y_valid</span> <span class="o">=</span> <span class="n">y_train</span><span class="p">[</span><span class="n">order</span><span class="p">][</span><span class="n">split_index</span><span class="p">:]</span>
-<span class="n">y_train</span> <span class="o">=</span> <span class="n">y_train</span><span class="p">[</span><span class="n">order</span><span class="p">][:</span><span class="n">split_index</span><span class="p">]</span>
-
-<span class="c1"># Squeezing the data into [0,1], which improves training.</span>
-
-<span class="n">X_train</span> <span class="o">/=</span> <span class="mi">255</span>
-<span class="n">X_valid</span> <span class="o">/=</span> <span class="mi">255</span>
-<span class="n">X_test</span> <span class="o">/=</span> <span class="mi">255</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MNIST</span><span class="p">:</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">image_transforms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_transforms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="n">images</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_transforms</span> <span class="o">=</span> <span class="n">image_transforms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_transforms</span> <span class="o">=</span> <span class="n">label_transforms</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        
+        <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_transforms</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_transforms</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">label</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    
+<span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">256</span>
+    
+<span class="n">batchloaders</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">batchloaders</span><span class="p">[</span><span class="s1">'train'</span><span class="p">]</span> <span class="o">=</span> <span class="n">BatchLoader</span><span class="p">(</span><span class="n">MNIST</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">image_transforms</span><span class="p">,</span> <span class="n">label_transforms</span><span class="p">),</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">batchloaders</span><span class="p">[</span><span class="s1">'val'</span><span class="p">]</span> <span class="o">=</span> <span class="n">BatchLoader</span><span class="p">(</span><span class="n">MNIST</span><span class="p">(</span><span class="n">X_val</span><span class="p">,</span> <span class="n">y_val</span><span class="p">,</span> <span class="n">image_transforms</span><span class="p">,</span> <span class="n">label_transforms</span><span class="p">),</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">batchloaders</span><span class="p">[</span><span class="s1">'test'</span><span class="p">]</span> <span class="o">=</span> <span class="n">BatchLoader</span><span class="p">(</span><span class="n">MNIST</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">image_transforms</span><span class="p">,</span> <span class="n">label_transforms</span><span class="p">),</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7600,7 +7715,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Model-creation-and-training-loop.">Model creation and training loop.<a class="anchor-link" href="#Model-creation-and-training-loop.">¶</a></h2>
+<h2 id="Model-definition-and-training-loop.">Model definition and training loop.<a class="anchor-link" href="#Model-definition-and-training-loop.">¶</a></h2>
 </div>
 </div>
 </div>
@@ -7609,22 +7724,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dl</span><span class="w"> </span><span class="kn">import</span> <span class="n">Module</span> <span class="c1"># Always import this if you wish to build your own Module using existing Modules. </span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dl.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">Linear</span><span class="p">,</span> <span class="n">ReLU</span> <span class="c1"># Typical modules in a multilayer perceptron.</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [59]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Defining a toy model.</span>
@@ -7660,7 +7760,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [60]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">()</span>
@@ -7693,33 +7793,11 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [61]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dl.optimizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">SGD</span> <span class="c1"># We need this to update model weights, aka train the model.</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">SGD</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="mf">0.01</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dl</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span> <span class="c1"># The datatype passed into any Module or Function must be a Variable. It is within Variables, and specifically the .node attribute, that autograd takes place. </span>
-
-<span class="n">X_train</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
-<span class="n">X_valid</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X_valid</span><span class="p">)</span>
-<span class="n">X_test</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
-
-<span class="n">y_train</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span>
-<span class="n">y_valid</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">y_valid</span><span class="p">)</span>
-<span class="n">y_test</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">()</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">SGD</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">1e-4</span> <span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7730,30 +7808,66 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [62]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dl.data.iterate</span><span class="w"> </span><span class="kn">import</span> <span class="n">iterate_batches</span> <span class="c1"># Passing in our training data into iterate_batches gives us the batches we need for each loss and gradient calculation.</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dl.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">cross_entropy_loss</span> <span class="c1"># We need this to evaluate the quality of our current model weights with respect to a batch.</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">epochs</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">train_losses</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">val_losses</span> <span class="o">=</span> <span class="p">[]</span>
 
+<span class="n">train_accuracies</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">val_accuracies</span> <span class="o">=</span> <span class="p">[]</span>
 
-<span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
-
-    <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">X_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="ow">in</span> <span class="n">iterate_batches</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-
+    
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    
+    <span class="c1"># Train</span>
+    
+    <span class="n">train_loss</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">train_correct</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">train_total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">enable_grad</span><span class="p">()</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">batchloaders</span><span class="p">[</span><span class="s1">'train'</span><span class="p">],</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Training"</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">X_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">:</span>
+        
+        <span class="c1"># Compute features and loss.</span>
         <span class="n">features</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">X_batch</span><span class="p">)</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="n">cross_entropy_loss</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
-        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span> <span class="c1"># Calculate the gradient (aka, the direction in which to change model weights in order to lower the current loss, as suggested by this immediate batch).</span>
-
-        <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">loss</span>
-
-        <span class="n">optimizer</span><span class="o">.</span><span class="n">update_parameters</span><span class="p">()</span>
+       
+        <span class="c1"># Update model parameters.</span>
         <span class="n">optimizer</span><span class="o">.</span><span class="n">clear_grad</span><span class="p">()</span>
-
-
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Epoch loss:"</span><span class="p">,</span> <span class="n">epoch_loss</span><span class="o">/</span><span class="n">epochs</span><span class="p">)</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">update_parameters</span><span class="p">()</span>
+    
+        <span class="n">train_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_batch</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">train_correct</span> <span class="o">+=</span> <span class="n">accuracy</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+        <span class="n">train_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_batch</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        
+        <span class="c1"># Update tqdm bar with batch loss</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="n">loss</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        
+    <span class="n">train_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">train_loss</span> <span class="o">/</span> <span class="n">train_total</span><span class="p">)</span>
+    <span class="n">train_accuracies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">train_correct</span> <span class="o">/</span> <span class="n">train_total</span><span class="p">)</span>
+    
+    <span class="c1"># Validate</span>
+    
+    <span class="n">val_loss</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">val_correct</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">val_total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">disable_grad</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">X_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">batchloaders</span><span class="p">[</span><span class="s1">'val'</span><span class="p">],</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Validating"</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        
+        <span class="n">features</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">X_batch</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">cross_entropy_loss</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+        
+        <span class="n">val_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_batch</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">val_correct</span> <span class="o">+=</span> <span class="n">accuracy</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+        <span class="n">val_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_batch</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        
+    <span class="n">val_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val_loss</span> <span class="o">/</span> <span class="n">val_total</span><span class="p">)</span>
+    <span class="n">val_accuracies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val_correct</span> <span class="o">/</span> <span class="n">val_total</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Train Loss: </span><span class="si">{</span><span class="n">train_losses</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> | Val Loss: </span><span class="si">{</span><span class="n">val_losses</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7766,11 +7880,201 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Epoch loss: 68.91900182172813
-Epoch loss: 36.28556470506497
-Epoch loss: 23.80397854182211
-Epoch loss: 19.09391891055885
-Epoch loss: 16.717239397033325
+<pre>
+Epoch 1/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                        </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.4316 | Val Loss: 0.2077
+
+Epoch 2/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.1843 | Val Loss: 0.1611
+
+Epoch 3/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.1386 | Val Loss: 0.1349
+
+Epoch 4/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.1116 | Val Loss: 0.1100
+
+Epoch 5/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.0927 | Val Loss: 0.1058
+
+Epoch 6/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.0788 | Val Loss: 0.0996
+
+Epoch 7/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.0683 | Val Loss: 0.0940
+
+Epoch 8/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.0607 | Val Loss: 0.0895
+
+Epoch 9/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.0534 | Val Loss: 0.0911
+
+Epoch 10/10
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>                                                                         </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train Loss: 0.0468 | Val Loss: 0.0874
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre></pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [63]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">test_loss</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">test_correct</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">test_total</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">model</span><span class="o">.</span><span class="n">disable_grad</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">X_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="ow">in</span> <span class="n">batchloaders</span><span class="p">[</span><span class="s1">'test'</span><span class="p">]:</span>
+    
+    <span class="n">features</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">X_batch</span><span class="p">)</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">cross_entropy_loss</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+    <span class="n">test_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_batch</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">test_correct</span> <span class="o">+=</span> <span class="n">accuracy</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+    <span class="n">test_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_batch</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test Loss: </span><span class="si">{</span><span class="p">(</span><span class="n">test_loss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">test_total</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> | Test Accuracy: </span><span class="si">{</span><span class="p">(</span><span class="n">test_correct</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">test_total</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Test Loss: 0.0819 | Test Accuracy: 0.9735
 </pre>
 </div>
 </div>

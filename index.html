@@ -67,6 +67,11 @@
       max-width: 900px;
     }
 
+    .main-container {
+      overflow-y: auto;
+      width: 100vw
+    }
+
     .doc-section {
       display: none;
     }
@@ -120,7 +125,6 @@
       <span class="function-link sub-link" data-fn="linear">Linear</span>
       <span class="function-link sub-link" data-fn="conv">Conv</span>
       <!-- <span class="function-link sub-link" data-fn="max_pool">MaxPool</span> -->
-      <span class="function-link sub-link" data-fn="function_wrappers">Function Wrappers</span>
 
       <h2>Optimizers</h2>
       <span class="function-link" data-fn="optimizers">Optimizers Overview</span>
@@ -131,9 +135,13 @@
     </div>
   </nav>
 
-  <main>
-    <div id="doc-content" class="doc-section active"></div>
-  </main>
+  <div class="main-container">
+    <main>
+      <div id="doc-content" class="doc-section active"></div>
+    </main>
+  </div>
+
+
 
   <script>
     const links = document.querySelectorAll('.function-link');
@@ -185,6 +193,22 @@
         document.getElementById('doc-content').innerHTML = `<p style="color:red;">Failed to load default homepage content.</p>`;
       }
     });
+  </script>
+  <script>
+  function resizeIframe(iframe) {
+    try {
+      const doc = iframe.contentWindow.document;
+      const observer = new ResizeObserver(() => {
+        iframe.style.height = doc.body.scrollHeight + 'px';
+      });
+      observer.observe(doc.body);
+
+      // Set initial height
+      iframe.style.height = doc.body.scrollHeight + 'px';
+    } catch (e) {
+      console.warn("Could not resize iframe:", e);
+    }
+  }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
