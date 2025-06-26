@@ -2,18 +2,18 @@
 <p><strong>Description:</strong> Returns the convolution between a set of 3D kernels and the 3D input image.</p>
 
 
-<h3><code>__init__</code>Parameters</h3>
+<h3><code>__init__</code> Parameters</h3>
 <ul>
 <li><code>C_in</code> (<em>int</em>): The number of input channels.</li>
 <li><code>C_out</code> (<em>int</em>): The number of output channels.</li>
 <li><code>K</code> (<em>int</em>): The width and height of the kernel.</li>
 <li><code>stride</code> (<em>int</em>): The stride of the convolution operation.</li>
 <li><code>padding</code> (<em>int</em>): The padding applied to both sides of the height and width dimensions of the input image.</li>
-<li><code>param_init</code> (<em>string</em>): A string specifying how to initialize the kernel weights.</li>
+<li><code>param_init="He"</code> (<em>string</em>): A string specifying how to initialize the kernel weights.</li>
 
 </ul>
 
-<h3><code>__call__</code>Parameters</h3>
+<h3><code>__call__</code> Parameters</h3>
 <ul>
 <li><code>X</code> (<em>Variable</em>): The input tensor, must be of shape \((N, C_{in}, H, W)\), representing a batch of 3D images.</li>
 </ul>
