@@ -3,7 +3,7 @@
 </h1>
 
 <p>
-    An AI model is really a composition of functions implemented using the Module class. Given an input, the output of the model depends on what its parameters are. The output is typically then passed into a loss function, which produces a scalar representing the "quality" of the model output. By calling backwards upon that scalar, we can obtain the gradient with respect to the loss for every parameter in the model. By modifying the parameters in the negative direction of the gradient, we can decrease the loss for that output, thus improving the model. This is the theory behind gradient descent. 
+    An AI model is really a composition of functions implemented using the Module class. Given an input, the output of the model depends on what its parameters are. The output is typically then passed into a loss function, which produces a scalar loss representing the "quality" of the model output. By calling backwards upon that scalar, we can obtain the gradient with respect to the loss for every parameter in the model. By modifying the parameters in the negative direction of the gradient, we can decrease the loss for that output, thus improving the model. This is the theory behind gradient descent. 
 </p>
 
 <p>
@@ -11,9 +11,14 @@
 </p>
 
 <p>
-    An optimizer is an object that, given a list of parameters and their gradients, applies a modification to those parameters. Each optimizer must implement its own .update_parameters() methods. 
+    In this framework, an optimizer is an object that, given a list of parameters and their gradients, applies a modification to those parameters. Each optimizer must implement its own .update_parameters() methods. 
 </p>
 
 <p>
-    Please have a look at the <a href="https://github.com/michaelkosmider/dlminibox/blob/main/demo.ipynb" target="_blank">demo</a> notebook to see how modules, optimizers, and gradients all work together.
+    Please have a look at the demo notebook to see how modules, optimizers, and gradients all work together. The demo is also available <a href="https://github.com/michaelkosmider/dlminibox/blob/main/demo.ipynb" target="_blank">here</a>.
 </p>
+
+
+<iframe src="./demo.html"
+        width="100%" height="800px" style="border:none;">
+</iframe>

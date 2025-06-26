@@ -1,3 +1,55 @@
 <h1>Functions</h1>
 
-Functions and variables are the two entities at the heart of autodiff. As described in the tutorial, each function takes in a list of tensors and outputs a tensor. A function both computes the output tensor and connects that output tensor to the input tensors in the computation graph. Finally, each function has a corresponding backward function that implicitly applies the chain rule to all scalars in the input during backpropagation. 
+<p>
+    Functions and variables (or tensors) are the two entities at the heart of autodiff. As described in the tutorial, each function takes in a list of tensors and outputs a tensor. A function does two things: it computes the output tensor and it connects the output tensor to the input tensors in the computation graph. Each function has a corresponding backward function that accepts the gradient with respect to the output tensor and implicitly applies the chain rule to all scalars in the input during backpropagation. 
+</p>
+
+<p>
+    Let's recall the example from the tutorial, shown again below.
+</p>
+
+<p class="math-scrollable">
+    \[
+    \begin{array}{ccccccccc}
+    A& \searrow & & &&\\
+    B & \rightarrow & \text{matmul} & \rightarrow & C & \searrow & \\
+    & \searrow&&&&&\text{add} & \rightarrow & W & \rightarrow& \text{sum} & \rightarrow & z\\
+    D & \rightarrow &\text{add} & \rightarrow &E &\nearrow \\ 
+    \end{array}
+    \]
+</p>
+
+<p>
+    Here is how you can use DLminibox to reconstruct this example:
+</p>
+
+<pre class="line-numbers item" style="font-size: 0.70em;"><code class="language-python">from dl import Variable
+from dl.functions import matmul, add, sum
+import numpy as np
+
+A = Variable(np.array([[3, 7], [2, 5]], dtype=np.float32), keep_grad=True)
+
+B = Variable(np.array([[2, 0], [0, 4]], dtype=np.float32), keep_grad=True)
+
+D = Variable(np.array([[5, 3], [1, 9]], dtype=np.float32), keep_grad=True)
+
+C = matmul(A, B)
+
+E = add(B, D)
+
+W = add(C, E)
+
+z = sum(W)
+
+z.backward()
+
+# Example
+print(A.grad)
+
+# Output:
+# [[2. 4.]
+#  [2. 4.]]</code></pre>
+
+<p>
+    A few things to note: You must ensure that you wrap any numpy array with the Variable class, and to use only the functions under dl.functions (or dl.modules, explained in the module section). Otherwise, gradient tracking will not occur. Furthermore, only the gradients of variables with keep_grad set to True are kept.
+</p>
